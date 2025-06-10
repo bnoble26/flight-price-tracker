@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flight Price Tracker</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 900px; margin: auto; padding: 20px; }
+        select, button { padding: 6px; font-size: 16px; margin: 5px; }
+        .info { font-style: italic; color: #555; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>✈️ Backpacker Fare Tracker</h1>
+
+    <form method="POST">
+        <label for="origin">Origin:</label>
+        <select name="origin">
+            {% for o in origins %}
+                <option value="{{ o }}" {% if o == origin %}selected{% endif %}>{{ o }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="destination">Destination:</label>
+        <select name="destination">
+            {% for d in destinations %}
+                <option value="{{ d }}" {% if d == destination %}selected{% endif %}>{{ d }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="stops">Stops:</label>
+        <select name="stops">
+            <option value="">Any</option>
+            {% for s in stops %}
+                <option value="{{ s }}" {% if s|string == selected_stops %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+        </select>
+
+        <button type="submit">Show Chart</button>
+    </form>
+
+    <p class="info">📊 Data last updated: {{ last_scrape }}</p>
+    <p class="info">💡 Click a point on the chart to open booking in a new tab.</p>
+    <p class="info">⚠️ Aviasales may show additional budget combos not reflected in our pricing — chart shows lowest direct fare pulled from Amadeus.</p>
+
+    <div id="chart-container">{{ chart | safe }}</div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const plot = document.querySelector('.plotly-graph-div');
+            if (!plot) return;
+
+            plot.on('plotly_click', function (data) {
+                const date = data.points[0].x.split('T')[0];
+                const origin = "{{ origin }}";
+                const destination = "{{ destination }}";
+                const marker = "{{ marker }}";
+                const d = new Date(date);
+                const day = String(d.getDate()).padStart(2, '0');
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+
+                const url = `https://www.aviasales.com/search/${origin}${day}${month}${destination}1?marker=${marker}&currency=GBP`;
+                window.open(url, "_blank");
+            });
+        });
+    </script>
+</body>
+</html>
