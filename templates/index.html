@@ -1,67 +1,145 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Flight Price Tracker</title>
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 900px; margin: auto; padding: 20px; }
-        select, button { padding: 6px; font-size: 16px; margin: 5px; }
-        .info { font-style: italic; color: #555; margin: 10px 0; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flight Price Tracker</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <style>
+    :root {
+      --primary-color: #0057a3;
+      --bg-color: #f8f9fa;
+      --text-color: #333;
+      --accent-color: #e9ecef;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg-color);
+      color: var(--text-color);
+    }
+
+    header {
+      background: var(--primary-color);
+      color: white;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: auto;
+      padding: 1rem;
+    }
+
+    form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    form label {
+      flex: 1 1 100%;
+      margin-top: 0.5rem;
+    }
+
+    form select, form button {
+      flex: 1 1 calc(33% - 1rem);
+      padding: 0.5rem;
+      font-size: 1rem;
+    }
+
+    .info {
+      font-style: italic;
+      color: #555;
+      margin: 1rem 0;
+    }
+
+    #chart-container {
+      background: white;
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+
+    footer {
+      margin-top: 2rem;
+      text-align: center;
+      font-size: 0.9rem;
+      color: #777;
+    }
+
+    @media (max-width: 768px) {
+      form select, form button {
+        flex: 1 1 100%;
+      }
+    }
+  </style>
 </head>
 <body>
+  <header>
     <h1>✈️ Backpacker Fare Tracker</h1>
+  </header>
 
+  <div class="container">
     <form method="POST">
-        <label for="origin">Origin:</label>
-        <select name="origin">
-            {% for o in origins %}
-                <option value="{{ o }}" {% if o == origin %}selected{% endif %}>{{ o }}</option>
-            {% endfor %}
-        </select>
+      <label for="origin">Origin</label>
+      <select name="origin">
+        {% for o in origins %}
+          <option value="{{ o }}" {% if o == origin %}selected{% endif %}>{{ o }}</option>
+        {% endfor %}
+      </select>
 
-        <label for="destination">Destination:</label>
-        <select name="destination">
-            {% for d in destinations %}
-                <option value="{{ d }}" {% if d == destination %}selected{% endif %}>{{ d }}</option>
-            {% endfor %}
-        </select>
+      <label for="destination">Destination</label>
+      <select name="destination">
+        {% for d in destinations %}
+          <option value="{{ d }}" {% if d == destination %}selected{% endif %}>{{ d }}</option>
+        {% endfor %}
+      </select>
 
-        <label for="stops">Stops:</label>
-        <select name="stops">
-            <option value="">Any</option>
-            {% for s in stops %}
-                <option value="{{ s }}" {% if s|string == selected_stops %}selected{% endif %}>{{ s }}</option>
-            {% endfor %}
-        </select>
+      <label for="stops">Max Stops</label>
+      <select name="stops">
+        <option value="">Any</option>
+        {% for s in stops %}
+          <option value="{{ s }}" {% if s|string == selected_stops %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
 
-        <button type="submit">Show Chart</button>
+      <button type="submit">Show Chart</button>
     </form>
 
-    <p class="info">📊 Data last updated: {{ last_scrape }}</p>
-    <p class="info">💡 Click a point on the chart to open booking in a new tab.</p>
-    <p class="info">⚠️ Aviasales may show additional budget combos not reflected in our pricing — chart shows lowest direct fare pulled from Amadeus.</p>
+    <p class="info">📊 Last updated: {{ last_scrape }}<br>
+      💡 Click a point on the chart to open booking in a new tab.<br>
+      ⚠️ Prices shown may not include all combos from Aviasales.</p>
 
     <div id="chart-container">{{ chart | safe }}</div>
+  </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const plot = document.querySelector('.plotly-graph-div');
-            if (!plot) return;
+  <footer>
+    <p>&copy; {{ last_scrape[:4] }} Flight Price Tracker. Built for backpackers by a solo dev.</p>
+  </footer>
 
-            plot.on('plotly_click', function (data) {
-                const date = data.points[0].x.split('T')[0];
-                const origin = "{{ origin }}";
-                const destination = "{{ destination }}";
-                const marker = "{{ marker }}";
-                const d = new Date(date);
-                const day = String(d.getDate()).padStart(2, '0');
-                const month = String(d.getMonth() + 1).padStart(2, '0');
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const plot = document.querySelector('.plotly-graph-div');
+      if (!plot) return;
 
-                const url = `https://www.aviasales.com/search/${origin}${day}${month}${destination}1?marker=${marker}&currency=GBP`;
-                window.open(url, "_blank");
-            });
-        });
-    </script>
+      plot.on('plotly_click', function (data) {
+        const date = data.points[0].x.split('T')[0];
+        const origin = "{{ origin }}";
+        const destination = "{{ destination }}";
+        const marker = "{{ marker }}";
+        const d = new Date(date);
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+
+        const url = `https://www.aviasales.com/search/${origin}${day}${month}${destination}1?marker=${marker}&currency=gbp`;
+        window.open(url, "_blank");
+      });
+    });
+  </script>
 </body>
 </html>
